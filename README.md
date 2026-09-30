@@ -1,6 +1,8 @@
 # RepositorySiteExample
 Example of a Repository Site, that could be gathered by BigFix 11.0.7 or later
 
+This repository is intended to be an example, illustrating a possible directory structure layout for a Bigfix Repository Site, with example fixlets, and demonstrating use of siteConfig.xml, site.xml, and digest.xml
+
 See Also:
 
 [BigFix Repository Sites Documentation](https://help.hcl-software.com/bigfix/11.0/platform/Platform/Config/c_repository_site.html)
