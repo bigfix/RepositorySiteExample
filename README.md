@@ -31,6 +31,32 @@ Create the known_hosts file.  This example is for github.com, replace with your 
 ```
 ssh-keyscan github.com >> known_hosts
 ```
+**Note** : the ssh-keyscan from Windows may not be compatible and yield errors such as
+```
+ ssh-keyscan github.com >> known_hosts
+# github.com:22 SSH-2.0-0e0c9ec
+choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com
+# github.com:22 SSH-2.0-0e0c9ec
+choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com
+# github.com:22 SSH-2.0-0e0c9ec
+choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com
+# github.com:22 SSH-2.0-0e0c9ec
+choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com
+# github.com:22 SSH-2.0-0e0c9ec
+choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com
+```
+
+In that case, install 'Git for Windows' client and use the openssh binaries from it:
+```
+"C:\Program Files\Git\usr\bin\ssh-keyscan.exe" github.com >> known_hosts
+# github.com:22 SSH-2.0-0e0c9ec
+# github.com:22 SSH-2.0-0e0c9ec
+# github.com:22 SSH-2.0-0e0c9ec
+# github.com:22 SSH-2.0-0e0c9ec
+# github.com:22 SSH-2.0-0e0c9ec
+```
+
+
 
 Import the id_rsa.pub as an SSH Public Key on a github account as which your server will authenticate.  This account needs contents:read permission on any repository you wish to gather.
 
