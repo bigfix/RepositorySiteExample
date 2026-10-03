@@ -68,15 +68,25 @@ An example directory structure may be illustrated as
 ```none
 Fixlets/
    ├── Analyses/
+   │    ├─ digest.xml
    │    └─ 1300- Some Analysis.bes
    ├── Fixlets/
-   │    └─ FixletType1/
+   │    ├── digest.xml
+   │    ├── FixletType1/
    │    │     └─ digest.xml
    │    │     └─ 2110- Some Fixlet.bes
    │    └─ FixletType2/
    |          └─ 2210- Some Fixlet.bes
    └── Tasks/
         └─ 3300- Some Task.bes
+NonClientFiles/
+   ├── customdashboard.ojo
+   └── customwebreport.beswrpt
+
+OtherFiles/
+   └── mycustomfile.json
+site.xml
+siteConfig.xml
 ```
 
 /Fixlets/ — all .bes files (Fixlets, Tasks, Analyses). 
@@ -87,7 +97,7 @@ Fixlets/
 
 /OtherFiles/ — Files to be gathered by the client (optional).
 
-/site.xml — global relevance rules applied to all Fixlets (optional).
+/site.xml — global relevance rules applied to all Fixlets (optional); and used as Site Level Relevance.
 
 /siteConfig.xml — customize default directory names (optional).
 
