@@ -117,3 +117,48 @@ Optionally set a name and description for the site.
 BigFix will verify SSH access using the keys in GitCredentials, then clone the repository.
 
 Monitor the root server logs for messages like 'Repository site cloned successfully' or 'Repository site updated successfully'.
+
+# Common Problems
+
+## Fixlet Naming
+Fixlets must be named with a unique numeric prefix and hyphen and an extension of ".bes", i.e. "123- Example Fixlet.bes".  The numeric prefix will determine the Fixlet ID assigned when the Content Site is generated.  BES files with no numeric identifier, or identifiers that are duplicated within the site, will be excluded from the site build and trigger a warning in the log file.
+
+## Embedded JavaScript Comments
+JavaScript may be embedded in the Description field of fixlets.
+The entire Description is compiled into a single line by the site propagation tool; JavaScript comment to end-of-line, `// comment`, will break JavaScript processing.  These should be replaced by `/* comment */` comments.
+
+## Long File Names
+
+By default Windows has a rather short maximum path limitation, and gathering a Git Repo beneath a deep directory like `C:\Program Files (x86)\BigFix Enterprise\BES Server\RepositorySiteGather\Sites\MyCustomSiteName` can easily exceed the depth limit.  This results in a message such as the following:
+
+```
+Fri, 02 Oct 2026 23:39:38 +0200 - 12152 - Failed to sync repository site git@github.com:acapasso/AACBigFix.git: path too long: 'E:/Program Files/BigFix Enterprise/BES Server/RepositorySiteGather/Sites/AACBigFix_HX90_e4fe1019/Source/Fixlets/Tasks/00003546- Deploy JDK Files - Installation Command msiexec.exe i OpenJDK8U-jdk_x64_windows_openj9_8u265b01_openj9-0.21.0.msi qn INSTALLLEVEL=3.bes'
+```
+To work around this, you may enable Long Paths on Windows by the following steps:
+
+* You can bypass the 260-character limit in modern versions of Windows (Windows 10 version 1607 or newer, and Windows 11) by updating the registry: [1]
+* Press the Windows key, type regedit, and open the Registry Editor.
+* Go to HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem.
+* Find or create a DWORD (32-bit) value named LongPathsEnabled.
+* Set its value to 1.
+* Restart your computer.
+
+## Cannot propogate custom content using `GroupRelevance`
+
+Custom Fixlets may be configured with Relevance based on other Global Properties from the specific deployment.  This results in a `<GroupRelevance>` node, such as:
+
+```
+<GroupRelevance JoinByIntersection="false">
+    <SearchComponentPropertyReference PropertyName="OS" Comparison="Contains">
+        <SearchText>Win</SearchText>
+        <Relevance>exists (operating system) whose (it as string as lowercase contains "Win" as lowercase)</Relevance>
+    </SearchComponentPropertyReference>
+</GroupRelevance>
+```
+This is not supported by the Propagation Tools for an External Site or Repository Site, and will generate an error message such as the following:
+
+```
+Fri, 02 Oct 2026 11:46:10 +0200 - 12152 - Failed to sync repository site git@github.com:acapasso/AACBigFix.git: Site validation and export failed: E:\Program Files\BigFix Enterprise\BES Server\RepositorySiteGather\Sites\AACBigFix_HX90_e4fe1019\Source\Fixlets\Analyses\20717- BradSexton Detect Source of Pending Restart Status.bes: GroupRelevance clauses in .bes files not supported. Use standard <Relevance> nodes instead.
+```
+
+To work around this, you must rewrite the Relevance of the fixlet and avoid using the `<GroupRelevance>` tag.
