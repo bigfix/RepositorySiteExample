@@ -132,7 +132,7 @@ The entire Description is compiled into a single line by the site propagation to
 By default Windows has a rather short maximum path limitation, and gathering a Git Repo beneath a deep directory like `C:\Program Files (x86)\BigFix Enterprise\BES Server\RepositorySiteGather\Sites\MyCustomSiteName` can exceed the depth limit.  This results in a message such as the following:
 
 ```
-Fri, 02 Oct 2026 23:39:38 +0200 - 12152 - Failed to sync repository site git@github.com:acapasso/AACBigFix.git: path too long: 'E:/Program Files/BigFix Enterprise/BES Server/RepositorySiteGather/Sites/AACBigFix_HX90_e4fe1019/Source/Fixlets/Tasks/00003546- Deploy JDK Files - Installation Command msiexec.exe i OpenJDK8U-jdk_x64_windows_openj9_8u265b01_openj9-0.21.0.msi qn INSTALLLEVEL=3.bes'
+Fri, 02 Oct 2026 23:39:38 +0200 - 12152 - Failed to sync repository site git@github.com:acapasso/AACBigFix.git: path too long: 'C:/Program Files/BigFix Enterprise/BES Server/RepositorySiteGather/Sites/MySiteName_main_e4fe1019/Source/Fixlets/Tasks/00003546- Some Task With A VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY Long Filename.bes'
 ```
 ### BigFix 11.0.7
 To work around this in BigFix 11.0.7 you must rename the content Filenames or Directory Structure such that the entire file pathname, when prefixed by your BigFix Server Installation Path, does not exceed 260 characters.
