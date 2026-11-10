@@ -1,4 +1,5 @@
 # RepositorySiteExample
+
 Example of a Repository Site, that could be gathered by BigFix 11.0.7 or later
 
 This repository is intended to be an example, illustrating a possible directory structure layout for a Bigfix Repository Site, with example fixlets, and demonstrating use of siteConfig.xml, site.xml, and digest.xml
@@ -11,7 +12,6 @@ See Also:
 
 [BigFix Forum](https://forum.bigfix.com)
 
-
 # Generating SSH Credential on BigFix Root Server
 
 Open an Elevated Command Prompt
@@ -22,16 +22,20 @@ CD "C:\Program Files (x86)\BigFix Enterprise\BES Server\RepositorySiteGather\Git
 ```
 
 Generate an SSH Public/Private Key Pair.  (As of 11.0.7, these specific filenames must be used):
+
 ```
 # create id_rsa and id_rsa.pub
 ssh-keygen -m PEM -t rsa -b 4096 -f id_rsa -N ""
 ```
 
 Create the known_hosts file.  This example is for github.com, replace with your own git provider as necessary:
+
 ```
 ssh-keyscan github.com >> known_hosts
 ```
+
 **Note** : the ssh-keyscan from Windows may not be compatible and yield errors such as
+
 ```
  ssh-keyscan github.com >> known_hosts
 # github.com:22 SSH-2.0-0e0c9ec
@@ -47,6 +51,7 @@ choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com
 ```
 
 In that case, install 'Git for Windows' client and use the openssh binaries from it:
+
 ```
 "C:\Program Files\Git\usr\bin\ssh-keyscan.exe" github.com >> known_hosts
 # github.com:22 SSH-2.0-0e0c9ec
@@ -56,8 +61,6 @@ In that case, install 'Git for Windows' client and use the openssh binaries from
 # github.com:22 SSH-2.0-0e0c9ec
 ```
 
-
-
 Import the id_rsa.pub as an SSH Public Key on a github account as which your server will authenticate.  This account needs contents:read permission on any repository you wish to gather.
 
 # Content Site Structure
@@ -65,6 +68,7 @@ Import the id_rsa.pub as an SSH Public Key on a github account as which your ser
 Repositories must follow BigFix Support Site Propagation conventions:
 
 An example directory structure may be illustrated as
+
 ```none
 Fixlets/
    ├── Analyses/
@@ -89,7 +93,7 @@ site.xml
 siteConfig.xml
 ```
 
-/Fixlets/ — all .bes files (Fixlets, Tasks, Analyses). 
+/Fixlets/ — all .bes files (Fixlets, Tasks, Analyses).
     Subdirectories auto-compile: Fixlets/Analyses/ → Analyses.fxf.
     Sub-Sub-Directories become Digests within an FXF, i.e. Fixlets.fxf contains digests for FixletType1 and FixletType2
 
@@ -105,10 +109,44 @@ Filename convention: start with numeric ID, hyphen, space, filename --> '1- Task
 The numeric ID portion of a filename becomes the Fixlet ID.
 Filenames without a numeric ID, or duplicate numeric IDs, will not be gathered on the BigFix Server and will show a warning in the server logs.
 
+# site.xml and digest.xml
+
+`site.xml`, in the root directory of the repository, can apply a Relevance clause that is both the 'Site Level Relevance' viewed in the Console, and is also applied as a top-level Relevance on every Fixlet/Task/Analysis in the site.
+Example:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<Site>
+  <Relevance>
+      windows of operating system
+  </Relevance>
+</Site>
+```
+
+`digest.xml`, in any level of subdirectory beneath `/Fixlets/`, does two things.  First, it creates a Digest - a way of *grouping* related content, such that the fixlets in this directory are skipped if the Digest relevance evaluates to 'False'.  Every Fixlet will appear to have this Relevance clause prefixed when the Fixlet is viewed via the Console or API.  Additionally, the digest.xml can configure a delay in re-evaluating the Digest, as well as a delay in the frequency of evaluating the fixlets within the Digest.
+
+In the following example, the `exists relay service` will be included in every Fixlet from this directory.  The fixlets within this digest will be skipped entirely on systems that are not Relays.  Additionally, this `exists relay service` top-level relevance will only be evaluated every 15 minutes.  For systems that *are* relays, each of the Fixlets beneath this Digest will only be evaluated every 5 minutes at most.
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<Digest>
+  <Relevance>
+    exists relay service
+  </Relevance>
+  <DigestRelevanceEvaluationPeriod>PT15M</DigestRelevanceEvaluationPeriod>
+  <ChildEvaluationPeriod>PT5M</ChildEvaluationPeriod>
+</Digest>
+```
+
+By grouping related content beneath a single Digest, we can improve efficiency by only evaluating the fixlets that meet the relevance prerequisite in the Digest.  Further, we can limit how frequently those contents are evaluated, which can be important for expensive evaluations.
+
+Finally, a common convention is to keep a `superseded` directory at each subdirectory of Fixlets, and for the relevance of the `superseded` digest.xml to simply be `False`.  This allows skipping superseded fixlets just by moving it into the 'superseded' digest, without having to edit the fixlet at all.
+
 # Add Repository Site using BigFix Console
+
 In BigFix Console, go to Tools > Create Repository Site.
 
-Enter the SSH URL: git@github.com:username/repo-name.git
+Enter the SSH URL: <git@github.com>:username/repo-name.git
 
 Specify the branch to track (typically 'main' or 'master').
 
@@ -121,19 +159,22 @@ Monitor the root server logs for messages like 'Repository site cloned successfu
 # Common Problems
 
 ## Gather fails due to untrusted certificate
+
 By default the Root Server's certificate does not contain a Subject Alternative Name value for `IP:127.0.0.1` and the loopback gather does not verify the certificate.  If `_BESGather_Use_Https` is set to `1` (Force HTTPS), the Gather fails entirely.
 To workaround, either set `_BESGather_Use_Https` to `2` (Try HTTPS but allow HTTP fallback), or provision a custom certificate for the root server, including a Subject Alternative Name `IP:127.0.0.1`
 
 ## Fixlet Naming
+
 Fixlets must be named with a unique numeric prefix and hyphen and an extension of ".bes", i.e. "123- Example Fixlet.bes".  The numeric prefix will determine the Fixlet ID assigned when the Content Site is generated.  BES files with no numeric identifier, or identifiers that are duplicated within the site, will be excluded from the site build and trigger a warning in the log file.
 
 ## Embedded JavaScript Comments
+
 JavaScript may be embedded in the Description field of fixlets.
 The entire Description is compiled into a single line by the site propagation tool; JavaScript comment to end-of-line, `// comment`, will break JavaScript processing.  These should be replaced by `/* comment */` comments.
 
 ## Long File Names
-By default Windows has a rather short maximum path limitation, and gathering a Git Repo beneath a deep directory like `C:\Program Files (x86)\BigFix Enterprise\BES Server\RepositorySiteGather\Sites\MyCustomSiteName` can exceed the depth limit.  This results in a message such as the following:
 
+By default Windows has a rather short maximum path limitation, and gathering a Git Repo beneath a deep directory like `C:\Program Files (x86)\BigFix Enterprise\BES Server\RepositorySiteGather\Sites\MyCustomSiteName` can exceed the depth limit.  This results in a message such as the following:
 
 `Fri, 02 Oct 2026 23:39:38 +0200 - 12152 - Failed to sync repository site git@github.com:acapasso/AACBigFix.git: path too long: 'C:/Program Files/BigFix Enterprise/BES Server/RepositorySiteGather/Sites/MySiteName_main_e4fe1019/Source/Fixlets/Tasks/00003546- Some Task With A VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY Long Filename.bes'`
 
@@ -151,6 +192,7 @@ Custom Fixlets may be configured with Relevance based on other Global Properties
     </SearchComponentPropertyReference>
 </GroupRelevance>
 ```
+
 This is not supported by the Propagation Tools for an External Site or Repository Site, and will generate an error message such as the following:
 
 ```
