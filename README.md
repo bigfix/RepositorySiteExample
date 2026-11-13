@@ -158,10 +158,42 @@ Monitor the root server logs for messages like 'Repository site cloned successfu
 
 # Common Problems
 
-## Gather fails due to untrusted certificate
+## Gather fails due to untrusted certificate using Loopback Address
 
+The BESRelay.log on the root server may show an untrusted certificate when it tries to gather from itself as in the following example:
+```
+Mon, 19 Oct 2026 08:27:11 -0500 - 3636 - HTTP gather for http://127.0.0.1:52311/BESRepositorySiteGather?url=bigfix://bigfix.com/repositorysite%3frepository_url%3dgit@github.com:bigfix/RepositorySiteExample.git%26git_branch%3dmain&Time=1792416431 was successful. HTTPS connection to {https://127.0.0.1:52311/BESRepositorySiteGather?url=bigfix://bigfix.com/repositorysite%3frepository_url%3dgit@github.com:bigfix/RepositorySiteExample.git%26git_branch%3dmain&Time=1792416431} was unsuccessful due to {HTTP Error 60: SSL peer certificate or SSH remote key was not OK: SSL: no alternative certificate subject name matches target IPv4 address '127.0.0.1'}.; retried using HTTP
+```
 By default the Root Server's certificate does not contain a Subject Alternative Name value for `IP:127.0.0.1` and the loopback gather does not verify the certificate.  If `_BESGather_Use_Https` is set to `1` (Force HTTPS), the Gather fails entirely.
 To workaround, either set `_BESGather_Use_Https` to `2` (Try HTTPS but allow HTTP fallback), or provision a custom certificate for the root server, including a Subject Alternative Name `IP:127.0.0.1`
+
+## Gather fails due to untrusted certificate root authority
+
+When using a custom root server certificate as described at [Customizing HTTPS on REST API](https://help.hcl-software.com/bigfix/11.0/platform/Platform/Config/c_restapi_https_settings.html), we may find the server does not trust its own certificate for Gathering.  That can create a message such as
+
+```
+Mon, 19 Oct 2026 08:27:11 -0500 - 3636 - HTTP gather for http://127.0.0.1:52311/BESRepositorySiteGather?url=bigfix://bigfix.com/repositorysite%3frepository_url%3dgit@github.com:bigfix/RepositorySiteExample.git%26git_branch%3dmain&Time=1792416431 was successful. HTTPS connection to {https://127.0.0.1:52311/BESRepositorySiteGather?url=bigfix://bigfix.com/repositorysite%3frepository_url%3dgit@github.com:bigfix/RepositorySiteExample.git%26git_branch%3dmain&Time=1792416431} was unsuccessful due to {HTTP Error 60: SSL peer certificate or SSH remote key was not OK: SSL certificate OpenSSL verify result: unable to get local issuer certificate (20)}.; retried using HTTP
+```
+In that case, we must add our custom CA Root Authority and any Intermediate Authority certificates to the BigFix Root Server's ca-bundle.crt
+
+There is a brief description of this file at [Customizing HTTPS for Gathering](https://help.hcl-software.com/bigfix/11.0/patch/Platform/Config/c_https_gathering.html?hl=ca-bundle.crt)
+
+We must have the Root Authority and any Intermediate CA certificates saved in PEM format (text file beginning with `-----BEGIN CERTIFICATE-----`)
+
+*Always save a backup copy of ca-bundle.crt first*
+
+On Windows:
+```batch
+type C:\ca\certs\Root-Authority.cer >> c:\Program Files (x86)\BigFix Enterprise\BES Server\Reference\ca-bundle.crt
+type C:\ca\certs\Intermediate-Authority.cer >> c:\Program Files (x86)\BigFix Enterprise\BES Server\Reference\ca-bundle.crt
+```
+On RHEL:
+```bash
+cat /var/ca/Root-Authority.cer >> /var/opt/BESServer/Reference/ca-bundle.crt
+cat /var/ca/Intermediate-Authority.cer >> /var/opt/BESServer/Reference/ca-bundle.crt
+```
+
+
 
 ## Fixlet Naming
 
